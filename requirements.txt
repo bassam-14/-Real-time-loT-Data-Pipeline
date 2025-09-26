@@ -1,0 +1,7 @@
+pandas
+
+apache-airflow-providers-postgres
+
+mysql-connector-python
+
+apache-airflow-providers-mysql
