@@ -51,6 +51,8 @@ def main():
 
             # Dump the data point as a JSON string to Kafka (Later).
             print(json.dumps(data_point))
+            with open("logs/sample_logs.txt", "a") as file:
+                file.write(f"\n{json.dumps(data_point)}")
 
             time.sleep(5)
 
