@@ -59,11 +59,13 @@ def create_table():
 
     create_table_sql = """
     CREATE TABLE IF NOT EXISTS sensor_readings(
+        id INT AUTO_INCREMENT PRIMARY KEY,
         sensor_id INT,
         timestamp VARCHAR(255),
         temperature FLOAT,
         humidity FLOAT,
-        PRIMARY KEY (timestamp)
+        INDEX idx_timestamp (timestamp),
+        INDEX idx_sensor_id (sensor_id)
     )
     """
 
@@ -75,19 +77,31 @@ def create_table():
 
 def load_data(**context):
     df = pd.DataFrame(context["ti"].xcom_pull(key="cleaned_data", task_ids="transform"))
+
+    if df.empty:
+        log.warning("No data to load!")
+        return
+
+    log.info(f"Loading {len(df)} records to database")
+
     engine = sqlalchemy.create_engine(
         "mysql+pymysql://airflow:airflow@mysql/airflow_db"
     )
 
+    # Calculate averages per sensor
     avg_df = df.groupby("sensor_id", as_index=False)[["temperature", "humidity"]].mean()
-
     avg_df.rename(
         columns={"temperature": "avg_temperature", "humidity": "avg_humidity"},
         inplace=True,
     )
 
+    # Load aggregated data (replace existing)
     avg_df.to_sql("sensor_avg", con=engine, if_exists="replace", index=False)
-    df.to_sql("sensor_readings", con=engine, if_exists="append", index=False)
+    log.info(f"Loaded {len(avg_df)} average records to sensor_avg table")
+
+    # Load detailed data (replace to avoid duplicates)
+    df.to_sql("sensor_readings", con=engine, if_exists="replace", index=False)
+    log.info(f"Loaded {len(df)} records to sensor_readings table")
 
 
 with DAG(
