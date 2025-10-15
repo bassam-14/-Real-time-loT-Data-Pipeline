@@ -5,6 +5,7 @@ import json
 
 TOTAL_SENSORS = 50
 ANOMALY_CHANCE = 0.05  # A 5% chance of an anomalous reading
+REJECTED_DATA = 0.01
 
 
 def generate_sensor_reading():
@@ -15,10 +16,14 @@ def generate_sensor_reading():
     sensor_id = random.randint(1, TOTAL_SENSORS)
     timestamp = datetime.now().isoformat()
 
+    randomness = random.random()
     # Simulate temperature reading.
-    if random.random() > ANOMALY_CHANCE:
+    if randomness > ANOMALY_CHANCE:
         temperature = round(random.uniform(15.0, 30.0), 2)
-    else:
+    elif randomness < REJECTED_DATA:
+        sensor_id *= -1
+        temperature = round(random.uniform(45.0, 60.0), 2)
+    elif randomness < ANOMALY_CHANCE:
         temperature = round(random.uniform(45.0, 60.0), 2)
 
     # Simulate humidity reading, independent of the temperature.
@@ -51,7 +56,7 @@ def main():
 
             # Dump the data point as a JSON string to Kafka (Later).
             print(json.dumps(data_point))
-            with open("logs/sample_logs.txt", "a") as file:
+            with open("logs/sample_logs.jsonl", "a") as file:
                 file.write(f"\n{json.dumps(data_point)}")
 
             time.sleep(5)
