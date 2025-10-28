@@ -1,12 +1,20 @@
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
 import json
 import logging
+import os
+from dotenv import load_dotenv
+from kafka import KafkaConsumer
 from datetime import datetime
 import pandas as pd
 import sqlalchemy
 
 log = logging.getLogger(__name__)
+
+load_dotenv()
+KAFKA_BROKER = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
+KAFKA_TOPIC = os.getenv("KAFKA_TOPIC_SENSOR_DATA")
+timeout = 10000
 
 
 def start_pipline():
@@ -14,20 +22,38 @@ def start_pipline():
 
 
 def extract_data(**context):
+    """
+    Consumes all unread messages from Kafka for this consumer group.
+    """
+    log.info(f"Connecting to Kafka: {KAFKA_BROKER}, Topic: {KAFKA_TOPIC}")
+    data = []
+
     try:
-        file_path = "/opt/airflow/logs/sample_logs.jsonl"
-        log.info(f"Reading data from {file_path}")
+        # Create a consumer with a unique group_id
+        consumer = KafkaConsumer(
+            KAFKA_TOPIC,
+            bootstrap_servers=[KAFKA_BROKER],
+            auto_offset_reset="earliest",
+            group_id="batch-processor-group",
+            consumer_timeout_ms=timeout,  # Stops iterating after 10s of no messages
+            value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+        )
 
-        with open(file_path, "r") as file:
-            data = [json.loads(line.strip()) for line in file if line.strip()]
+        # Consume all available messages
+        for message in consumer:
+            data.append(message.value)
 
+        consumer.close()
+
+        # Log results and push to XCom
         log.info(f"Data extracted successfully! Total records: {len(data)}")
+        if not data:
+            log.warning("No new data found in Kafka topic.")
+
         context["ti"].xcom_push(key="data", value=data)
-    except FileNotFoundError as e:
-        log.error(f"File not found: {e}")
-        raise
+
     except Exception as e:
-        log.exception(f"Error extracting data: {e}")
+        log.exception(f"Error extracting data from Kafka: {e}")
         raise
 
 
