@@ -6,6 +6,8 @@ mysql-connector-python
 
 apache-airflow-providers-mysql
 
+python-dotenv
+
 # Kafka Integration
 kafka-python>=2.0.2
 confluent-kafka>=2.3.0
