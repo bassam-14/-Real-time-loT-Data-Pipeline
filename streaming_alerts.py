@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 # Load Environment Variables
 load_dotenv()
-KAFKA_BROKER = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
+KAFKA_BROKER = os.getenv("KAFKA_BROKER")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC_SENSOR_DATA")
 
 # Alerting Thresholds
@@ -21,6 +21,10 @@ def main():
     """
     Main function to connect to Kafka and run the alerting loop.
     """
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
     consumer = None
     try:
         consumer = KafkaConsumer(

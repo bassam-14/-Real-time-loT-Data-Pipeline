@@ -12,7 +12,7 @@ import sqlalchemy
 log = logging.getLogger(__name__)
 
 load_dotenv()
-KAFKA_BROKER = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
+KAFKA_BROKER = os.getenv("KAFKA_BROKER_INTERNAL")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC_SENSOR_DATA")
 timeout = 10000
 

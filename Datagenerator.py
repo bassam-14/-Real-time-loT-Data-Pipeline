@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
-KAFKA_BROKER = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
+KAFKA_BROKER = os.getenv("KAFKA_BROKER")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC_SENSOR_DATA")
 
 TOTAL_SENSORS = 50
@@ -58,6 +58,10 @@ def main():
     """
     Main function to run the data simulation loop.
     """
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
     producer = None
     try:
         # Set up the Kafka producer
