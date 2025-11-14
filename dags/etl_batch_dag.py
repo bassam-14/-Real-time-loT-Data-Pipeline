@@ -62,7 +62,7 @@ def process_data(**context):
 
     if not data:
         log.error("No data received from extract task!")
-        raise ValueError("No data to process")
+        # raise ValueError("No data to process")
 
     log.info(f"Processing {len(data)} records")
     df = pd.DataFrame(data)
@@ -73,7 +73,9 @@ def process_data(**context):
     df = df[df["sensor_id"] > 0]
     df = df.dropna()
 
-    df = df[(df["temperature"] <= 100) & (df["temperature"] >= -25)]
+    df = df[
+        (df["temperature"] <= 100) & (df["temperature"] >= -25)
+    ]  # drop the wrong values
     context["ti"].xcom_push(key="cleaned_data", value=df.to_dict(orient="records"))
 
 
@@ -85,11 +87,13 @@ def create_table():
 
     create_table_sql = """
     CREATE TABLE IF NOT EXISTS sensor_readings(
+        id INT AUTO_INCREMENT PRIMARY KEY,
         sensor_id INT,
         timestamp VARCHAR(255),
         temperature FLOAT,
         humidity FLOAT,
-        PRIMARY KEY (timestamp)
+        INDEX idx_timestamp (timestamp),
+        INDEX idx_sensor_id (sensor_id)
     )
     """
 
@@ -113,7 +117,7 @@ def load_data(**context):
     )
 
     avg_df.to_sql("sensor_avg", con=engine, if_exists="replace", index=False)
-    df.to_sql("sensor_readings", con=engine, if_exists="append", index=False)
+    df.to_sql("sensor_readings", con=engine, if_exists="replace", index=False)
 
 
 with DAG(
