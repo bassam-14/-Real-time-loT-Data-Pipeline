@@ -499,11 +499,4 @@ If you encounter any issues:
 
 This project is licensed under the Apache License 2.0.
 
-## 👥 Contributors
-
-- DEPI Data Engineering Team
-- Branch: Elshewy
-
----
-
 **Happy Data Engineering! 🚀**
