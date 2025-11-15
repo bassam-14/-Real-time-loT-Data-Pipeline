@@ -8,6 +8,10 @@ apache-airflow-providers-mysql
 
 python-dotenv
 
+# Dashboard UI
+streamlit>=1.38.0
+plotly>=5.24.0
+
 # Kafka Integration
 kafka-python>=2.0.2
 confluent-kafka>=2.3.0

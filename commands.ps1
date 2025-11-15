@@ -6,8 +6,9 @@ function Start-Pipeline {
     Write-Host "🚀 Starting IoT Data Pipeline..." -ForegroundColor Cyan
     docker-compose up -d
     Write-Host "✅ Pipeline started! Access:" -ForegroundColor Green
-    Write-Host "   Airflow UI: http://localhost:8080" -ForegroundColor White
+    Write-Host "   Airflow UI: http://localhost:8081" -ForegroundColor White
     Write-Host "   Kafka UI:   http://localhost:8090" -ForegroundColor White
+    Write-Host "   MySQL:      localhost:3307" -ForegroundColor White
 }
 
 function Stop-Pipeline {
@@ -34,7 +35,8 @@ function Show-PipelineLogs {
     if ($Service -eq "") {
         Write-Host "📋 Showing all logs (Ctrl+C to stop)..." -ForegroundColor Cyan
         docker-compose logs -f
-    } else {
+    }
+    else {
         Write-Host "📋 Showing logs for $Service (Ctrl+C to stop)..." -ForegroundColor Cyan
         docker-compose logs -f $Service
     }
@@ -46,7 +48,8 @@ function Remove-Pipeline {
         Write-Host "🗑️  Removing IoT Data Pipeline..." -ForegroundColor Red
         docker-compose down -v
         Write-Host "✅ Pipeline removed!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "❌ Operation cancelled." -ForegroundColor Yellow
     }
 }
@@ -98,7 +101,7 @@ function Show-AirflowDags {
 
 function Trigger-AirflowDag {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$DagId
     )
     Write-Host "▶️  Triggering DAG: $DagId..." -ForegroundColor Cyan
@@ -187,8 +190,9 @@ function Show-PipelineInfo {
     Write-Host "   Show-PipelineInfo           Show this help" -ForegroundColor White
     Write-Host ""
     Write-Host "🌐 Access URLs:" -ForegroundColor Yellow
-    Write-Host "   Airflow UI: http://localhost:8080" -ForegroundColor White
+    Write-Host "   Airflow UI: http://localhost:8081" -ForegroundColor White
     Write-Host "   Kafka UI:   http://localhost:8090" -ForegroundColor White
+    Write-Host "   MySQL:      localhost:3307" -ForegroundColor White
     Write-Host ""
 }
 

@@ -86,16 +86,17 @@ docker-compose ps
 # Print access information
 Write-Host "`n[OK] Setup Complete!" -ForegroundColor Green
 Write-Host "`n[WEB] Access URLs:" -ForegroundColor Cyan
-Write-Host "  - Airflow UI:  http://localhost:8080" -ForegroundColor White
+Write-Host "  - Airflow UI:  http://localhost:8081" -ForegroundColor White
 Write-Host "    Username: airflow | Password: airflow (or your custom credentials)" -ForegroundColor Gray
 Write-Host "  - Kafka UI:    http://localhost:8090" -ForegroundColor White
-Write-Host "  - MySQL:       localhost:3306" -ForegroundColor White
+Write-Host "  - MySQL:       localhost:3307" -ForegroundColor White
 Write-Host "`n[NEXT] Next Steps:" -ForegroundColor Cyan
-Write-Host "  1. Open Airflow UI at http://localhost:8080" -ForegroundColor White
-Write-Host "  2. Create Kafka topics: docker-compose exec kafka kafka-topics --create --bootstrap-server localhost:29092 --topic iot_sensor_data --partitions 3" -ForegroundColor White
+Write-Host "  1. Run .\start-all.ps1 to start services and open all UIs" -ForegroundColor White
+Write-Host "  2. Or manually open Airflow UI at http://localhost:8081" -ForegroundColor White
 Write-Host "  3. Add your DAG files to the dags/ folder" -ForegroundColor White
 Write-Host "`n[TIP] Tips:" -ForegroundColor Cyan
+Write-Host "  - Start everything: .\start-all.ps1" -ForegroundColor White
+Write-Host "  - Stop everything: .\stop-all.ps1" -ForegroundColor White
 Write-Host "  - View logs: docker-compose logs -f" -ForegroundColor White
-Write-Host "  - Stop services: docker-compose stop" -ForegroundColor White
 Write-Host "  - Remove everything: docker-compose down -v" -ForegroundColor White
 Write-Host "`nHappy Data Engineering!" -ForegroundColor Green

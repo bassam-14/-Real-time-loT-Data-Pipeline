@@ -32,9 +32,7 @@ def generate_sensor_reading():
     # Simulate temperature reading.
     if randomness > ANOMALY_CHANCE:
         temperature = round(random.uniform(15.0, 30.0), 2)
-    elif randomness < REJECTED_DATA:
-        sensor_id *= -1
-        temperature = round(random.uniform(45.0, 60.0), 2)
+
     elif randomness < ANOMALY_CHANCE:
         temperature = round(random.uniform(45.0, 60.0), 2)
 

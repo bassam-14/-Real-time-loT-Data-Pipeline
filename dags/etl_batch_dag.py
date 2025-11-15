@@ -1,5 +1,6 @@
 from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator
+from airflow.operators.email import EmailOperator
 import json
 import logging
 import os
@@ -15,6 +16,11 @@ load_dotenv()
 KAFKA_BROKER = os.getenv("KAFKA_BROKER_INTERNAL")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC_SENSOR_DATA")
 timeout = 10000
+
+# Alert Thresholds
+TEMP_THRESHOLD = 45.0
+HUMIDITY_THRESHOLD = 85.0
+ALERT_EMAIL = os.getenv("ALERT_EMAIL", "es-mohamed.bassam2027@alexu.edu.eg")
 
 
 def start_pipline():
@@ -120,10 +126,95 @@ def load_data(**context):
     df.to_sql("sensor_readings", con=engine, if_exists="replace", index=False)
 
 
+def check_alerts(**context):
+    """
+    Check for alert conditions and return alert details
+    """
+    df = pd.DataFrame(context["ti"].xcom_pull(key="cleaned_data", task_ids="transform"))
+
+    if df.empty:
+        log.info("No data to check for alerts")
+        return None
+
+    alerts = []
+
+    # Check temperature alerts
+    temp_alerts = df[df["temperature"] > TEMP_THRESHOLD]
+    for _, row in temp_alerts.iterrows():
+        alerts.append(
+            {
+                "type": "High Temperature",
+                "sensor_id": row["sensor_id"],
+                "value": row["temperature"],
+                "threshold": TEMP_THRESHOLD,
+                "timestamp": row["timestamp"],
+            }
+        )
+
+    # Check humidity alerts
+    humidity_alerts = df[df["humidity"] > HUMIDITY_THRESHOLD]
+    for _, row in humidity_alerts.iterrows():
+        alerts.append(
+            {
+                "type": "High Humidity",
+                "sensor_id": row["sensor_id"],
+                "value": row["humidity"],
+                "threshold": HUMIDITY_THRESHOLD,
+                "timestamp": row["timestamp"],
+            }
+        )
+
+    if alerts:
+        log.warning(f"Found {len(alerts)} alert conditions!")
+        context["ti"].xcom_push(key="alerts", value=alerts)
+        return alerts
+    else:
+        log.info("No alert conditions detected")
+        return None
+
+
+def send_alert_email(**context):
+    """
+    Send email with alert details
+    """
+    alerts = context["ti"].xcom_pull(key="alerts", task_ids="check_alerts")
+
+    if not alerts:
+        log.info("No alerts to send")
+        return
+
+    # Build email body
+    email_body = "<h2>IoT Sensor Alert Report</h2>\n"
+    email_body += f"<p><strong>Total Alerts:</strong> {len(alerts)}</p>\n"
+    email_body += "<table border='1' cellpadding='5' cellspacing='0'>\n"
+    email_body += "<tr><th>Alert Type</th><th>Sensor ID</th><th>Value</th><th>Threshold</th><th>Timestamp</th></tr>\n"
+
+    for alert in alerts:
+        email_body += f"<tr>"
+        email_body += f"<td>{alert['type']}</td>"
+        email_body += f"<td>{alert['sensor_id']}</td>"
+        email_body += f"<td>{alert['value']:.2f}</td>"
+        email_body += f"<td>{alert['threshold']:.2f}</td>"
+        email_body += f"<td>{alert['timestamp']}</td>"
+        email_body += f"</tr>\n"
+
+    email_body += "</table>"
+
+    context["ti"].xcom_push(key="email_body", value=email_body)
+    log.info(f"Prepared alert email with {len(alerts)} alerts")
+
+
+default_args = {
+    "email": [ALERT_EMAIL],
+    "email_on_failure": True,
+    "email_on_retry": False,
+}
+
 with DAG(
     dag_id="etl_dag",
+    default_args=default_args,
     start_date=datetime(2025, 1, 1),
-    schedule="@daily",
+    schedule="@hourly",
     catchup=False,
 ) as dag:
     start = PythonOperator(task_id="start", python_callable=start_pipline)
@@ -138,4 +229,25 @@ with DAG(
 
     load2 = PythonOperator(task_id="load_data", python_callable=load_data)
 
-    start >> extract >> transform >> create_table_task >> load2
+    check_alerts_task = PythonOperator(
+        task_id="check_alerts", python_callable=check_alerts
+    )
+
+    send_alert_task = PythonOperator(
+        task_id="send_alert_email", python_callable=send_alert_email
+    )
+
+    # Email alert is optional - commented out until SMTP is configured
+    # Uncomment these lines after setting up email in .env file
+    email_alert = EmailOperator(
+        task_id="email_alert",
+        to=ALERT_EMAIL,
+        subject="IoT Sensor Alert - {{ ds }}",
+        html_content="{{ ti.xcom_pull(task_ids='send_alert_email', key='email_body') }}",
+    )
+
+    # Main pipeline - will complete successfully
+    start >> extract >> transform >> create_table_task >> load2 >> check_alerts_task
+
+    # Email tasks disabled until SMTP configured
+    check_alerts_task >> send_alert_task >> email_alert

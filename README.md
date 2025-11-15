@@ -22,6 +22,8 @@ Apache Kafka (Streaming)
 Apache Airflow (Orchestration)
     ↓
 MySQL Database (Storage)
+    ↓
+Email Alerts (Threshold Monitoring)
 ```
 
 ## 🛠️ Technology Stack
@@ -36,17 +38,102 @@ MySQL Database (Storage)
 
 ## 📦 Services Included
 
-| Service           | Port | Description                           |
-| ----------------- | ---- | ------------------------------------- |
-| Airflow Web UI    | 8080 | Airflow dashboard and DAG management  |
-| Kafka Broker      | 9092 | Kafka broker for external connections |
-| Kafka UI          | 8090 | Web interface for monitoring Kafka    |
-| MySQL             | 3306 | MySQL database (internal)             |
-| Redis             | 6379 | Redis for Celery backend (internal)   |
-| Zookeeper         | 2181 | Kafka coordination (internal)         |
-| Flower (optional) | 5555 | Celery monitoring tool                |
+| Service             | Port | Description                                  |
+| ------------------- | ---- | -------------------------------------------- |
+| Airflow Web UI      | 8081 | Airflow dashboard and DAG management         |
+| Kafka Broker        | 9092 | Kafka broker for external connections        |
+| Kafka UI            | 8090 | Web interface for monitoring Kafka           |
+| MySQL               | 3307 | MySQL database (host access)                 |
+| Streamlit Dashboard | 8501 | Real-time sensor dashboard with auto-refresh |
+| Redis               | 6379 | Redis for Celery backend (internal)          |
+| Zookeeper           | 2181 | Kafka coordination (internal)                |
+| Flower (optional)   | 5555 | Celery monitoring tool                       |
 
-## 🚀 Getting Started
+## ⚡ Quick Start (One-Click Setup)
+
+### Option 1: Automated Setup (Recommended)
+
+**Run everything with one command:**
+
+```powershell
+# Navigate to project folder
+cd "d:\Mohamred data\data engineering DEPI\Technical\final project"
+
+# Start all services and open web interfaces
+.\start-all.ps1
+```
+
+This script will:
+
+- ✅ Check Docker is running
+- ✅ Start all Docker services (Kafka, MySQL, Airflow, Redis)
+- ✅ Create Kafka topic automatically
+- ✅ Launch Streamlit dashboard
+- ✅ Open all web interfaces in your browser
+
+**To stop everything:**
+
+```powershell
+.\stop-all.ps1
+```
+
+---
+
+### Option 2: Manual Setup (Step by Step)
+
+#### Step 1: Start All Services
+
+```powershell
+# 1. Navigate to project folder
+cd "d:\Mohamred data\data engineering DEPI\Technical\final project"
+
+# 2. Copy environment file (if not done already)
+Copy-Item sample.env .env
+
+# 3. Start Docker services (Kafka, Airflow, MySQL)
+docker-compose up -d
+
+# 4. Wait 2-3 minutes for all services to be healthy ☕
+docker-compose ps
+```
+
+#### Step 2: Create Kafka Topic
+
+```powershell
+docker-compose exec kafka kafka-topics --create `
+  --bootstrap-server localhost:29092 `
+  --replication-factor 1 `
+  --partitions 3 `
+  --topic iot_sensor_data
+```
+
+#### Step 3: Access the Services
+
+- **Airflow UI**: http://localhost:8081 (user: `airflow`, pass: `airflow`)
+- **Kafka UI**: http://localhost:8090
+
+#### Step 4: Run the Dashboard (Optional)
+
+```powershell
+# Install Python dependencies locally
+python -m pip install -r requirements.txt
+
+# Set environment for local MySQL access (note: port 3307)
+$env:MYSQL_HOST="127.0.0.1"
+$env:MYSQL_PORT="3307"
+$env:MYSQL_USER="airflow"
+$env:MYSQL_PASSWORD="airflow"
+$env:MYSQL_DATABASE="airflow_db"
+
+# Run Streamlit dashboard
+python -m streamlit run dashboard_app.py
+```
+
+Dashboard will open at: http://localhost:8501
+
+---
+
+## 🚀 Detailed Setup Guide
 
 ### Prerequisites
 
@@ -54,6 +141,7 @@ MySQL Database (Storage)
 - Docker Compose V2
 - Minimum 4GB RAM allocated to Docker
 - 10GB free disk space
+- Python 3.8+ (for running dashboard locally)
 
 ### Installation Steps
 
@@ -149,6 +237,24 @@ All services should show status as "healthy" or "running".
 - **Kafka UI**: http://localhost:8090
   - No authentication required
   - View topics, messages, and consumer groups
+
+## 📧 Email Alerts Setup
+
+The pipeline includes **automated email alerts** for threshold violations:
+
+- 🌡️ **High Temperature Alert**: > 45°C
+- 💧 **High Humidity Alert**: > 85%
+
+**Quick Setup:**
+
+1. Copy `sample.env` to `.env`
+2. Configure SMTP settings (Gmail, Outlook, etc.)
+3. Set your `ALERT_EMAIL` address
+4. Restart services: `.\stop-all.ps1` then `.\start-all.ps1`
+
+📖 **Detailed Guide**: See [EMAIL_ALERTS_SETUP.md](EMAIL_ALERTS_SETUP.md) for complete configuration instructions.
+
+---
 
 ## 📊 Working with the Pipeline
 
